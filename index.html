@@ -1,11 +1,1090 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Expenses Manager - On-Behalf Expense & Settlement Tracker</title>
   <meta name="description" content="Track expenses paid on behalf of others (train bookings, mobile recharge, petty expenses), calculate net balances, and generate instant WhatsApp statements for reimbursement.">
-  <link rel="stylesheet" href="css/style.css">
+  <style>
+/* ==========================================================================
+   DueTrack Pro - Modern Design System & Stylesheet
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Color Palette - Dark Default */
+  --bg-primary: #090d16;
+  --bg-secondary: #0f172a;
+  --bg-card: rgba(30, 41, 59, 0.7);
+  --bg-card-hover: rgba(51, 65, 85, 0.7);
+  --bg-input: #1e293b;
+  --border-color: rgba(148, 163, 184, 0.12);
+  --border-focus: rgba(99, 102, 241, 0.5);
+
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+
+  --accent-primary: #6366f1;
+  --accent-primary-hover: #4f46e5;
+  --accent-glow: rgba(99, 102, 241, 0.25);
+
+  --due-color: #fb7185;
+  --due-bg: rgba(251, 113, 133, 0.12);
+  --due-border: rgba(251, 113, 133, 0.25);
+
+  --settled-color: #34d399;
+  --settled-bg: rgba(52, 211, 153, 0.12);
+  --settled-border: rgba(52, 211, 153, 0.25);
+
+  --warning-color: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.12);
+
+  --info-color: #38bdf8;
+  --info-bg: rgba(56, 189, 248, 0.12);
+
+  --whatsapp-color: #25d366;
+  --whatsapp-bg: rgba(37, 211, 102, 0.14);
+
+  /* Geometry & Effects */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 25px var(--accent-glow);
+
+  --backdrop-blur: blur(12px);
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-card-hover: rgba(255, 255, 255, 1);
+  --bg-input: #ffffff;
+  --border-color: rgba(148, 163, 184, 0.25);
+  --border-focus: rgba(99, 102, 241, 0.4);
+
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+
+  --accent-primary: #4f46e5;
+  --accent-primary-hover: #4338ca;
+  --accent-glow: rgba(79, 70, 229, 0.15);
+
+  --due-color: #e11d48;
+  --due-bg: rgba(225, 29, 72, 0.08);
+  --due-border: rgba(225, 29, 72, 0.2);
+
+  --settled-color: #059669;
+  --settled-bg: rgba(5, 150, 105, 0.08);
+  --settled-border: rgba(5, 150, 105, 0.2);
+
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+}
+
+/* Reset & Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  min-height: 100vh;
+  line-height: 1.5;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(244, 63, 94, 0.06) 0px, transparent 50%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Layout */
+.app-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-logo {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--accent-primary), #ec4899);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+.brand-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.2));
+  color: var(--accent-primary);
+  border: 1px solid var(--border-color);
+  letter-spacing: 0.05em;
+}
+
+.brand-tagline {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-main);
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-primary), #4f46e5);
+  color: #fff;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px var(--accent-glow);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+.btn-success:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-color: var(--border-color);
+}
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-focus);
+}
+
+.btn-whatsapp {
+  background: #25d366;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+}
+.btn-whatsapp:hover {
+  background: #20ba5a;
+  transform: translateY(-1px);
+}
+
+.btn-danger-outline {
+  background: transparent;
+  color: var(--due-color);
+  border-color: var(--due-border);
+}
+.btn-danger-outline:hover {
+  background: var(--due-bg);
+}
+
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+.btn-icon:hover {
+  color: var(--text-main);
+  border-color: var(--border-focus);
+  background: var(--bg-card-hover);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Person Selector Strip */
+.person-strip-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.person-selector-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.person-selector-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.person-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.person-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.person-tab-btn:hover {
+  color: var(--text-main);
+  border-color: var(--accent-primary);
+}
+
+.person-tab-btn.active {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary);
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.person-avatar-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.person-meta-details {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* KPI Summary Cards */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.kpi-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-md);
+}
+
+.kpi-card.highlight-due {
+  border-color: var(--due-border);
+  background: linear-gradient(135deg, var(--bg-card), rgba(251, 113, 133, 0.05));
+}
+
+.kpi-card.highlight-settled {
+  border-color: var(--settled-border);
+  background: linear-gradient(135deg, var(--bg-card), rgba(52, 211, 153, 0.05));
+}
+
+.kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpi-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.kpi-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+}
+
+.kpi-icon.due { background: var(--due-bg); color: var(--due-color); }
+.kpi-icon.settled { background: var(--settled-bg); color: var(--settled-color); }
+.kpi-icon.total { background: var(--info-bg); color: var(--info-color); }
+.kpi-icon.count { background: var(--warning-bg); color: var(--warning-color); }
+
+.kpi-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+}
+
+.kpi-value.due-val { color: var(--due-color); }
+.kpi-value.settled-val { color: var(--settled-color); }
+
+.kpi-footer {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Quick Action Bar */
+.quick-action-strip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.quick-presets-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-preset-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.preset-chip:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-primary);
+  transform: translateY(-1px);
+}
+
+.main-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Main Content Area */
+.main-ledger-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tab Navigation */
+.ledger-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.ledger-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-secondary);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.ledger-tab-btn {
+  padding: 8px 18px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ledger-tab-btn:hover {
+  color: var(--text-main);
+}
+
+.ledger-tab-btn.active {
+  background: var(--bg-card);
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-badge {
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--border-color);
+}
+
+.ledger-tab-btn.active .tab-badge {
+  background: var(--accent-primary);
+  color: #fff;
+}
+
+/* Filter Bar */
+.filter-toolbar {
+  padding: 14px 24px;
+  background: rgba(15, 23, 42, 0.4);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filter-left-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.search-input-wrapper {
+  position: relative;
+  min-width: 240px;
+  flex: 1;
+  max-width: 380px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  font-family: var(--font-main);
+  transition: var(--transition);
+}
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.select-filter {
+  padding: 8px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.select-filter:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+/* Table Design */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.custom-table th {
+  padding: 14px 20px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.2);
+  white-space: nowrap;
+}
+
+.custom-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+.custom-table tbody tr {
+  transition: var(--transition);
+}
+
+.custom-table tbody tr:hover {
+  background: var(--bg-card-hover);
+}
+
+/* Category Badge */
+.category-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.category-icon-box {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.category-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.category-title {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.category-subtitle {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+/* Status Pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.status-pill.status-due {
+  background: var(--due-bg);
+  color: var(--due-color);
+  border: 1px solid var(--due-border);
+}
+
+.status-pill.status-settled {
+  background: var(--settled-bg);
+  color: var(--settled-color);
+  border: 1px solid var(--settled-border);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.amount-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.96rem;
+}
+
+.amount-val.due-text {
+  color: var(--due-color);
+}
+
+.amount-val.settled-text {
+  color: var(--settled-color);
+}
+
+/* Action Dropdowns / Buttons */
+.action-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.action-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+.action-btn.delete-btn:hover {
+  color: var(--due-color);
+  background: var(--due-bg);
+  border-color: var(--due-border);
+}
+
+.action-btn.settle-quick-btn:hover {
+  color: var(--settled-color);
+  background: var(--settled-bg);
+  border-color: var(--settled-border);
+}
+
+/* Empty State */
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  opacity: 0.8;
+}
+
+.empty-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.empty-desc {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  max-width: 420px;
+}
+
+/* Modals */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.modal-backdrop.open {
+  display: flex;
+  opacity: 1;
+}
+
+.modal-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.96);
+  transition: transform 0.25s ease;
+}
+
+.modal-backdrop.open .modal-card {
+  transform: scale(1);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.3rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+.modal-close-btn:hover {
+  color: var(--text-main);
+}
+
+.modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.3);
+}
+
+/* Forms */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-family: var(--font-main);
+  transition: var(--transition);
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* WhatsApp / Statement Generator Preview */
+.whatsapp-box-container {
+  background: #0b141a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: #e9edef;
+  white-space: pre-wrap;
+  max-height: 280px;
+  overflow-y: auto;
+  user-select: all;
+  border-left: 4px solid var(--whatsapp-color);
+}
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-size: 0.86rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideInToast 0.3s ease forwards;
+  pointer-events: auto;
+}
+
+.toast.success { border-left: 4px solid var(--settled-color); }
+.toast.info { border-left: 4px solid var(--accent-primary); }
+.toast.warning { border-left: 4px solid var(--warning-color); }
+
+@keyframes slideInToast {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   Print Stylesheet (for generating clean PDF/Paper statements)
+   ========================================================================== */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .app-header,
+  .person-strip-card,
+  .quick-action-strip,
+  .ledger-tabs,
+  .filter-toolbar,
+  .action-cell,
+  .custom-table th:last-child,
+  .modal-backdrop,
+  .toast-container {
+    display: none !important;
+  }
+
+  .app-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .print-only-statement-header {
+    display: block !important;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #333;
+  }
+
+  .custom-table {
+    border: 1px solid #ddd !important;
+  }
+
+  .custom-table th, .custom-table td {
+    color: #000 !important;
+    border-bottom: 1px solid #ddd !important;
+    padding: 10px !important;
+  }
+
+  .status-pill {
+    border: 1px solid #999 !important;
+    color: #000 !important;
+    background: transparent !important;
+  }
+
+  .kpi-card {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .kpi-value {
+    color: #000 !important;
+  }
+}
+
+.print-only-statement-header {
+  display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 16px 12px 60px;
+  }
+
+  .brand-title {
+    font-size: 1.2rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+</style>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><path d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'/></svg>">
 </head>
 <body>
@@ -514,7 +1593,1584 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Application Logic Scripts -->
-  <script src="js/data.js"></script>
-  <script src="js/app.js"></script>
+  
+  <script>
+/**
+ * DueTrack Pro - Default Sample Data & Configuration
+ */
+
+const DEFAULT_SETTINGS = {
+  userName: "My Account",
+  userUpiId: "pramod@upi",
+  currencySymbol: "₹",
+  theme: "dark"
+};
+
+const DEFAULT_PEOPLE = [
+  {
+    id: "person-xyz",
+    name: "Person XYZ (Rahul Sharma)",
+    phone: "+91 98765 43210",
+    email: "rahul.xyz@example.com",
+    notes: "Friend & travel companion - regularly settles at end of month",
+    avatarColor: "#6366f1",
+    createdAt: "2026-08-01T10:00:00Z"
+  },
+  {
+    id: "person-priya",
+    name: "Priya Patel",
+    phone: "+91 98123 45678",
+    email: "priya.p@example.com",
+    notes: "Flatmate - shared utility & grocery expenses",
+    avatarColor: "#ec4899",
+    createdAt: "2026-08-10T12:00:00Z"
+  },
+  {
+    id: "person-amit",
+    name: "Amit Kumar",
+    phone: "+91 99000 11223",
+    email: "amit.k@example.com",
+    notes: "Colleague - team lunches & cab bookings",
+    avatarColor: "#10b981",
+    createdAt: "2026-08-15T09:30:00Z"
+  }
+];
+
+const CATEGORIES = [
+  { id: "train", name: "Train / Travel Booking", icon: "🚆", color: "#3b82f6" },
+  { id: "recharge", name: "Mobile / DTH Recharge", icon: "📱", color: "#8b5cf6" },
+  { id: "petty", name: "Petty Cash & Errands", icon: "☕", color: "#f59e0b" },
+  { id: "cab", name: "Cab & Auto Fare", icon: "🚕", color: "#eab308" },
+  { id: "food", name: "Food & Dining", icon: "🍔", color: "#ef4444" },
+  { id: "groceries", name: "Groceries & Supplies", icon: "🛒", color: "#10b981" },
+  { id: "utilities", name: "Bills & Utilities", icon: "💡", color: "#06b6d4" },
+  { id: "other", name: "Other Expenses", icon: "📦", color: "#64748b" }
+];
+
+const PAYMENT_MODES = [
+  "UPI (GPay / PhonePe / Paytm)",
+  "Credit Card",
+  "Debit Card",
+  "Net Banking",
+  "Cash"
+];
+
+const DEFAULT_EXPENSES = [
+  {
+    id: "exp-001",
+    personId: "person-xyz",
+    date: "2026-08-28",
+    category: "train",
+    title: "IRCTC 3AC Train Ticket (Pune to Mumbai)",
+    amount: 1480,
+    paidVia: "UPI (GPay / PhonePe / Paytm)",
+    referenceNo: "PNR: 8421092831",
+    notes: "Booked tatkal ticket as requested over call",
+    isSettled: false,
+    settlementId: null,
+    createdAt: "2026-08-28T08:15:00Z"
+  },
+  {
+    id: "exp-002",
+    personId: "person-xyz",
+    date: "2026-09-02",
+    category: "recharge",
+    title: "Jio Prepaid 84-Days 2GB/Day Recharge",
+    amount: 749,
+    paidVia: "Credit Card",
+    referenceNo: "TXN90281048",
+    notes: "Annual pack booster request for his secondary SIM",
+    isSettled: false,
+    settlementId: null,
+    createdAt: "2026-09-02T11:30:00Z"
+  },
+  {
+    id: "exp-003",
+    personId: "person-xyz",
+    date: "2026-09-05",
+    category: "petty",
+    title: "Station Snacks, Water & Printout of documents",
+    amount: 220,
+    paidVia: "Cash",
+    referenceNo: "",
+    notes: "Platform food & emergency printouts",
+    isSettled: false,
+    settlementId: null,
+    createdAt: "2026-09-05T16:20:00Z"
+  },
+  {
+    id: "exp-004",
+    personId: "person-xyz",
+    date: "2026-09-07",
+    category: "cab",
+    title: "Uber Cab Booking to Airport",
+    amount: 850,
+    paidVia: "UPI (GPay / PhonePe / Paytm)",
+    referenceNo: "UBER-98212",
+    notes: "Cab booked from home to terminal 2",
+    isSettled: false,
+    settlementId: null,
+    createdAt: "2026-09-07T05:45:00Z"
+  },
+  {
+    id: "exp-005",
+    personId: "person-xyz",
+    date: "2026-08-15",
+    category: "food",
+    title: "Weekend Dinner at Spice Garden",
+    amount: 1100,
+    paidVia: "Credit Card",
+    referenceNo: "BILL#4409",
+    notes: "He asked me to tap my card, promised to settle later",
+    isSettled: true,
+    settlementId: "stl-001",
+    createdAt: "2026-08-15T21:00:00Z"
+  },
+  {
+    id: "exp-006",
+    personId: "person-priya",
+    date: "2026-09-01",
+    category: "utilities",
+    title: "Airtel Xstream Fiber WiFi Bill",
+    amount: 943,
+    paidVia: "UPI (GPay / PhonePe / Paytm)",
+    referenceNo: "AIRTEL-9812",
+    notes: "50% split for September month internet",
+    isSettled: false,
+    settlementId: null,
+    createdAt: "2026-09-01T14:10:00Z"
+  }
+];
+
+const DEFAULT_SETTLEMENTS = [
+  {
+    id: "stl-001",
+    personId: "person-xyz",
+    date: "2026-08-20",
+    amount: 1100,
+    mode: "UPI (GPay / PhonePe / Paytm)",
+    referenceNo: "UPI/2390192019/GPay",
+    notes: "Settled for the Spice Garden dinner bill",
+    createdAt: "2026-08-20T18:00:00Z"
+  }
+];
+
+</script>
+<script>
+/**
+ * DueTrack Pro - Core Application Logic
+ */
+
+(function () {
+  'use strict';
+
+  const STORAGE_KEYS = {
+    SETTINGS: 'duetrack_settings_v1',
+    PEOPLE: 'duetrack_people_v1',
+    EXPENSES: 'duetrack_expenses_v1',
+    SETTLEMENTS: 'duetrack_settlements_v1'
+  };
+
+  // Application State
+  const state = {
+    settings: null,
+    people: [],
+    expenses: [],
+    settlements: [],
+    activePersonId: 'person-xyz',
+    activeTab: 'expenses', // 'expenses' | 'settlements'
+    filters: {
+      search: '',
+      category: 'all',
+      status: 'all' // 'all' | 'due' | 'settled'
+    },
+    editingExpenseId: null
+  };
+
+  // Initialize
+  function init() {
+    loadState();
+    applyTheme(state.settings.theme || 'dark');
+    renderAll();
+    attachEventListeners();
+    setupTodayDates();
+  }
+
+  // State Persistence
+  function loadState() {
+    try {
+      const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      state.settings = savedSettings ? JSON.parse(savedSettings) : { ...DEFAULT_SETTINGS };
+
+      const savedPeople = localStorage.getItem(STORAGE_KEYS.PEOPLE);
+      state.people = savedPeople ? JSON.parse(savedPeople) : [...DEFAULT_PEOPLE];
+
+      const savedExpenses = localStorage.getItem(STORAGE_KEYS.EXPENSES);
+      state.expenses = savedExpenses ? JSON.parse(savedExpenses) : [...DEFAULT_EXPENSES];
+
+      const savedSettlements = localStorage.getItem(STORAGE_KEYS.SETTLEMENTS);
+      state.settlements = savedSettlements ? JSON.parse(savedSettlements) : [...DEFAULT_SETTLEMENTS];
+
+      // Ensure active person exists
+      if (!state.people.some(p => p.id === state.activePersonId)) {
+        state.activePersonId = state.people[0]?.id || 'all';
+      }
+    } catch (e) {
+      console.error('Failed to load state from localStorage:', e);
+      state.settings = { ...DEFAULT_SETTINGS };
+      state.people = [...DEFAULT_PEOPLE];
+      state.expenses = [...DEFAULT_EXPENSES];
+      state.settlements = [...DEFAULT_SETTLEMENTS];
+      state.activePersonId = 'person-xyz';
+    }
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(state.settings));
+      localStorage.setItem(STORAGE_KEYS.PEOPLE, JSON.stringify(state.people));
+      localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(state.expenses));
+      localStorage.setItem(STORAGE_KEYS.SETTLEMENTS, JSON.stringify(state.settlements));
+    } catch (e) {
+      console.error('Failed to save state to localStorage:', e);
+      showToast('Could not save changes to browser storage', 'warning');
+    }
+  }
+
+  // Calculations & Metrics
+  function getActivePerson() {
+    if (state.activePersonId === 'all') {
+      return { id: 'all', name: 'All Contacts (Consolidated)', avatarColor: '#6366f1' };
+    }
+    return state.people.find(p => p.id === state.activePersonId) || state.people[0];
+  }
+
+  function computeMetrics() {
+    const personId = state.activePersonId;
+    const filteredExpenses = personId === 'all'
+      ? state.expenses
+      : state.expenses.filter(e => e.personId === personId);
+
+    const filteredSettlements = personId === 'all'
+      ? state.settlements
+      : state.settlements.filter(s => s.personId === personId);
+
+    const totalExpenses = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const totalSettled = filteredSettlements.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+    const netDue = Math.max(0, totalExpenses - totalSettled);
+
+    return {
+      totalExpenses,
+      totalSettled,
+      netDue,
+      totalCount: filteredExpenses.length
+    };
+  }
+
+  // Formatting helpers
+  function formatCurrency(amount) {
+    const symbol = state.settings.currencySymbol || '₹';
+    const num = Number(amount || 0);
+    return `${symbol}${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  function getCategoryObj(categoryId) {
+    return CATEGORIES.find(c => c.id === categoryId) || { id: 'other', name: 'Other', icon: '📦', color: '#64748b' };
+  }
+
+  // Rendering
+  function renderAll() {
+    renderHeader();
+    renderPersonStrip();
+    renderKPIs();
+    renderLedger();
+    renderStatementPrintHeader();
+  }
+
+  function renderHeader() {
+    const myNameEl = document.getElementById('header-user-name');
+    if (myNameEl) myNameEl.textContent = state.settings.userName;
+
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    if (themeToggleBtn) {
+      themeToggleBtn.innerHTML = state.settings.theme === 'light'
+        ? '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path></svg>'
+        : '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+    }
+  }
+
+  function renderPersonStrip() {
+    const container = document.getElementById('person-tabs-container');
+    if (!container) return;
+
+    let html = '';
+    state.people.forEach(p => {
+      const isActive = p.id === state.activePersonId;
+      // calculate quick balance for this person
+      const pExpenses = state.expenses.filter(e => e.personId === p.id).reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+      const pSettled = state.settlements.filter(s => s.personId === p.id).reduce((sum, stl) => sum + Number(stl.amount || 0), 0);
+      const due = Math.max(0, pExpenses - pSettled);
+
+      html += `
+        <button class="person-tab-btn ${isActive ? 'active' : ''}" data-person-id="${p.id}">
+          <span class="person-avatar-dot" style="background-color: ${p.avatarColor || '#6366f1'};"></span>
+          <span>${escapeHtml(p.name)}</span>
+          ${due > 0 ? `<span style="font-size: 0.72rem; opacity: 0.85; margin-left: 2px;">(${formatCurrency(due)})</span>` : ''}
+        </button>
+      `;
+    });
+
+    // Add Consolidated tab
+    const isAll = state.activePersonId === 'all';
+    html += `
+      <button class="person-tab-btn ${isAll ? 'active' : ''}" data-person-id="all" title="View all people combined">
+        <span>🌐 All People</span>
+      </button>
+    `;
+
+    container.innerHTML = html;
+
+    // Render active person meta info
+    const metaContainer = document.getElementById('active-person-meta');
+    if (metaContainer) {
+      const activePerson = getActivePerson();
+      if (activePerson.id === 'all') {
+        metaContainer.innerHTML = `<span>Showing aggregate expenses across <strong>${state.people.length} contacts</strong></span>`;
+      } else {
+        metaContainer.innerHTML = `
+          <span>📞 ${activePerson.phone || 'No phone set'}</span>
+          <span>${activePerson.notes ? `📝 ${escapeHtml(activePerson.notes)}` : ''}</span>
+        `;
+      }
+    }
+  }
+
+  function renderKPIs() {
+    const metrics = computeMetrics();
+    const activePerson = getActivePerson();
+
+    const dueEl = document.getElementById('kpi-net-due');
+    if (dueEl) dueEl.textContent = formatCurrency(metrics.netDue);
+
+    const totalEl = document.getElementById('kpi-total-advanced');
+    if (totalEl) totalEl.textContent = formatCurrency(metrics.totalExpenses);
+
+    const settledEl = document.getElementById('kpi-total-settled');
+    if (settledEl) settledEl.textContent = formatCurrency(metrics.totalSettled);
+
+    const kpiPersonNameEl = document.getElementById('kpi-person-name');
+    if (kpiPersonNameEl) {
+      kpiPersonNameEl.textContent = activePerson.name;
+    }
+  }
+
+  function renderLedger() {
+    const expensesTabBtn = document.getElementById('tab-btn-expenses');
+    const settlementsTabBtn = document.getElementById('tab-btn-settlements');
+    const expensesCountBadge = document.getElementById('expenses-count-badge');
+    const settlementsCountBadge = document.getElementById('settlements-count-badge');
+
+    const metrics = computeMetrics();
+    if (expensesCountBadge) expensesCountBadge.textContent = metrics.totalCount;
+    if (settlementsCountBadge) {
+      const pSettlements = state.activePersonId === 'all'
+        ? state.settlements
+        : state.settlements.filter(s => s.personId === state.activePersonId);
+      settlementsCountBadge.textContent = pSettlements.length;
+    }
+
+    if (expensesTabBtn && settlementsTabBtn) {
+      if (state.activeTab === 'expenses') {
+        expensesTabBtn.classList.add('active');
+        settlementsTabBtn.classList.remove('active');
+        renderExpensesTable();
+      } else {
+        settlementsTabBtn.classList.add('active');
+        expensesTabBtn.classList.remove('active');
+        renderSettlementsTable();
+      }
+    }
+  }
+
+  function renderExpensesTable() {
+    const tableContainer = document.getElementById('ledger-table-container');
+    if (!tableContainer) return;
+
+    let items = state.activePersonId === 'all'
+      ? [...state.expenses]
+      : state.expenses.filter(e => e.personId === state.activePersonId);
+
+    // Apply Search Filter
+    if (state.filters.search) {
+      const query = state.filters.search.toLowerCase();
+      items = items.filter(e =>
+        (e.title && e.title.toLowerCase().includes(query)) ||
+        (e.notes && e.notes.toLowerCase().includes(query)) ||
+        (e.referenceNo && e.referenceNo.toLowerCase().includes(query)) ||
+        (e.paidVia && e.paidVia.toLowerCase().includes(query))
+      );
+    }
+
+    // Apply Category Filter
+    if (state.filters.category && state.filters.category !== 'all') {
+      items = items.filter(e => e.category === state.filters.category);
+    }
+
+    // Sort by date descending
+    items.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (items.length === 0) {
+      tableContainer.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🧾</div>
+          <div class="empty-title">No expenses found</div>
+          <div class="empty-desc">
+            ${state.filters.search || state.filters.category !== 'all'
+              ? 'No transactions match the selected filters. Try clearing your search.'
+              : 'You have not recorded any expenses for this person yet. Click "+ Add Expense" or use a quick preset above!'}
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="window.dueTrackApp.openAddExpenseModal()">+ Add First Expense</button>
+        </div>
+      `;
+      return;
+    }
+
+    let rowsHtml = '';
+    items.forEach(exp => {
+      const cat = getCategoryObj(exp.category);
+      const person = state.people.find(p => p.id === exp.personId);
+
+      rowsHtml += `
+        <tr data-expense-id="${exp.id}">
+          <td>
+            <div style="font-weight: 600;">${formatDate(exp.date)}</div>
+            ${state.activePersonId === 'all' && person ? `<div style="font-size: 0.75rem; color: var(--text-dim);">${escapeHtml(person.name)}</div>` : ''}
+          </td>
+          <td>
+            <div class="category-cell">
+              <div class="category-icon-box" style="border-color: ${cat.color}40; background: ${cat.color}15;">
+                <span>${cat.icon}</span>
+              </div>
+              <div class="category-title-wrap">
+                <span class="category-title">${escapeHtml(exp.title)}</span>
+                <span class="category-subtitle">${cat.name}${exp.referenceNo ? ` • Ref: ${escapeHtml(exp.referenceNo)}` : ''}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div style="font-size: 0.82rem; color: var(--text-muted);">${escapeHtml(exp.paidVia || 'UPI')}</div>
+            ${exp.notes ? `<div style="font-size: 0.75rem; color: var(--text-dim); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(exp.notes)}">📝 ${escapeHtml(exp.notes)}</div>` : ''}
+          </td>
+          <td style="text-align: right;">
+            <div class="amount-val">
+              ${formatCurrency(exp.amount)}
+            </div>
+          </td>
+          <td style="text-align: right;">
+            <div class="action-cell">
+              <button class="action-btn" title="Edit Expense" onclick="window.dueTrackApp.openEditExpenseModal('${exp.id}')">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="action-btn delete-btn" title="Delete Expense" onclick="window.dueTrackApp.deleteExpense('${exp.id}')">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    tableContainer.innerHTML = `
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th style="width: 120px;">Date</th>
+              <th>Expense Details</th>
+              <th style="width: 180px;">Paid By Me Via</th>
+              <th style="width: 140px; text-align: right;">Amount</th>
+              <th style="width: 100px; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderSettlementsTable() {
+    const tableContainer = document.getElementById('ledger-table-container');
+    if (!tableContainer) return;
+
+    let items = state.activePersonId === 'all'
+      ? [...state.settlements]
+      : state.settlements.filter(s => s.personId === state.activePersonId);
+
+    items.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (items.length === 0) {
+      tableContainer.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🤝</div>
+          <div class="empty-title">No repayments recorded</div>
+          <div class="empty-desc">
+            When Person XYZ or anyone pays you back via GPay, PhonePe, Bank Transfer, or Cash, record it here to offset the balance.
+          </div>
+          <button class="btn btn-success btn-sm" onclick="window.dueTrackApp.openRecordSettlementModal()">+ Record Repayment</button>
+        </div>
+      `;
+      return;
+    }
+
+    let rowsHtml = '';
+    items.forEach(stl => {
+      const person = state.people.find(p => p.id === stl.personId);
+      rowsHtml += `
+        <tr>
+          <td>
+            <div style="font-weight: 600;">${formatDate(stl.date)}</div>
+            ${state.activePersonId === 'all' && person ? `<div style="font-size: 0.75rem; color: var(--text-dim);">${escapeHtml(person.name)}</div>` : ''}
+          </td>
+          <td>
+            <div style="font-weight: 600; color: var(--text-main);">Repayment Received</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">${stl.notes ? escapeHtml(stl.notes) : 'General repayment against balance'}</div>
+          </td>
+          <td>
+            <div style="font-size: 0.82rem; color: var(--text-muted);">${escapeHtml(stl.mode || 'UPI')}</div>
+            ${stl.referenceNo ? `<div style="font-size: 0.75rem; color: var(--text-dim);">Ref: ${escapeHtml(stl.referenceNo)}</div>` : ''}
+          </td>
+          <td>
+            <span class="status-pill status-settled">
+              <span class="status-dot"></span>
+              Received
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <div class="amount-val settled-text">
+              +${formatCurrency(stl.amount)}
+            </div>
+          </td>
+          <td style="text-align: right;">
+            <div class="action-cell">
+              <button class="action-btn delete-btn" title="Delete Settlement Record" onclick="window.dueTrackApp.deleteSettlement('${stl.id}')">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    tableContainer.innerHTML = `
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th style="width: 120px;">Date</th>
+              <th>Description</th>
+              <th style="width: 180px;">Payment Mode</th>
+              <th style="width: 140px;">Type</th>
+              <th style="width: 140px; text-align: right;">Amount Received</th>
+              <th style="width: 120px; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderStatementPrintHeader() {
+    const printHeader = document.getElementById('print-statement-header');
+    if (!printHeader) return;
+
+    const activePerson = getActivePerson();
+    const metrics = computeMetrics();
+    const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    printHeader.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+        <div>
+          <h1 style="font-size: 1.5rem; margin: 0; color: #111;">STATEMENT OF EXPENSES PAID ON BEHALF</h1>
+          <div style="font-size: 0.9rem; color: #555; margin-top: 4px;">Prepared by: <strong>${escapeHtml(state.settings.userName)}</strong></div>
+          <div style="font-size: 0.85rem; color: #666;">Date of Generation: ${today}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.85rem; color: #666; text-transform: uppercase;">Beneficiary / For:</div>
+          <div style="font-size: 1.25rem; font-weight: bold; color: #111;">${escapeHtml(activePerson.name)}</div>
+          ${activePerson.phone ? `<div style="font-size: 0.85rem; color: #555;">Phone: ${escapeHtml(activePerson.phone)}</div>` : ''}
+        </div>
+      </div>
+      <div style="background: #f4f4f5; padding: 12px 18px; border-radius: 6px; display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 20px;">
+        <div>Total Expenses Advanced: <strong>${formatCurrency(metrics.totalExpenses)}</strong></div>
+        <div>Total Repayments Received: <strong>${formatCurrency(metrics.totalSettled)}</strong></div>
+        <div style="color: #b91c1c; font-weight: bold; font-size: 1rem;">NET BALANCE DUE: ${formatCurrency(metrics.netDue)}</div>
+      </div>
+      <div style="margin-bottom: 12px; font-weight: 600; font-size: 0.95rem;">Itemized Expenses Breakdown:</div>
+    `;
+  }
+
+  // Modals & User Actions
+  function openAddExpenseModal(prefillCategory = null, prefillTitle = '', prefillAmount = '') {
+    state.editingExpenseId = null;
+    document.getElementById('modal-expense-title').textContent = 'Add Expense Paid on Behalf';
+    document.getElementById('exp-form-id').value = '';
+    document.getElementById('exp-form-date').value = getTodayDateString();
+    document.getElementById('exp-form-title').value = prefillTitle;
+    document.getElementById('exp-form-amount').value = prefillAmount;
+    document.getElementById('exp-form-category').value = prefillCategory || 'train';
+    document.getElementById('exp-form-paidvia').value = 'UPI (GPay / PhonePe / Paytm)';
+    document.getElementById('exp-form-ref').value = '';
+    document.getElementById('exp-form-notes').value = '';
+
+    // Populate person dropdown in modal
+    const personSelect = document.getElementById('exp-form-person');
+    personSelect.innerHTML = state.people.map(p => `
+      <option value="${p.id}" ${p.id === state.activePersonId ? 'selected' : ''}>${escapeHtml(p.name)}</option>
+    `).join('');
+
+    openModal('modal-expense');
+    document.getElementById('exp-form-title').focus();
+  }
+
+  function openEditExpenseModal(id) {
+    const exp = state.expenses.find(e => e.id === id);
+    if (!exp) return;
+
+    state.editingExpenseId = id;
+    document.getElementById('modal-expense-title').textContent = 'Edit Expense';
+    document.getElementById('exp-form-id').value = exp.id;
+    document.getElementById('exp-form-date').value = exp.date;
+    document.getElementById('exp-form-title').value = exp.title;
+    document.getElementById('exp-form-amount').value = exp.amount;
+    document.getElementById('exp-form-category').value = exp.category;
+    document.getElementById('exp-form-paidvia').value = exp.paidVia || 'UPI (GPay / PhonePe / Paytm)';
+    document.getElementById('exp-form-ref').value = exp.referenceNo || '';
+    document.getElementById('exp-form-notes').value = exp.notes || '';
+
+    const personSelect = document.getElementById('exp-form-person');
+    personSelect.innerHTML = state.people.map(p => `
+      <option value="${p.id}" ${p.id === exp.personId ? 'selected' : ''}>${escapeHtml(p.name)}</option>
+    `).join('');
+
+    openModal('modal-expense');
+  }
+
+  function saveExpenseForm() {
+    const form = document.getElementById('form-add-expense');
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const id = document.getElementById('exp-form-id').value;
+    const date = document.getElementById('exp-form-date').value;
+    const personId = document.getElementById('exp-form-person').value;
+    const title = document.getElementById('exp-form-title').value.trim();
+    const amount = parseFloat(document.getElementById('exp-form-amount').value);
+    const category = document.getElementById('exp-form-category').value;
+    const paidVia = document.getElementById('exp-form-paidvia').value;
+    const referenceNo = document.getElementById('exp-form-ref').value.trim();
+    const notes = document.getElementById('exp-form-notes').value.trim();
+
+    if (isNaN(amount) || amount <= 0) {
+      showToast('Please enter a valid expense amount', 'warning');
+      return;
+    }
+
+    if (id) {
+      // Edit
+      const index = state.expenses.findIndex(e => e.id === id);
+      if (index !== -1) {
+        state.expenses[index] = {
+          ...state.expenses[index],
+          date,
+          personId,
+          title,
+          amount,
+          category,
+          paidVia,
+          referenceNo,
+          notes,
+          updatedAt: new Date().toISOString()
+        };
+        showToast('Expense updated successfully', 'success');
+      }
+    } else {
+      // Create new
+      const newExp = {
+        id: 'exp-' + Date.now(),
+        personId,
+        date,
+        category,
+        title,
+        amount,
+        paidVia,
+        referenceNo,
+        notes,
+        isSettled: false,
+        settlementId: null,
+        createdAt: new Date().toISOString()
+      };
+      state.expenses.unshift(newExp);
+      showToast(`Added ${title} (${formatCurrency(amount)})`, 'success');
+    }
+
+    saveState();
+    closeModal('modal-expense');
+    renderAll();
+  }
+
+  function quickToggleSettle(id) {
+    const exp = state.expenses.find(e => e.id === id);
+    if (!exp) return;
+
+    exp.isSettled = !exp.isSettled;
+    saveState();
+    renderAll();
+
+    if (exp.isSettled) {
+      showToast(`Marked "${exp.title}" as Settled`, 'success');
+    } else {
+      showToast(`Marked "${exp.title}" as Due`, 'info');
+    }
+  }
+
+  function deleteExpense(id) {
+    const exp = state.expenses.find(e => e.id === id);
+    if (!exp) return;
+
+    if (confirm(`Are you sure you want to delete "${exp.title}" (${formatCurrency(exp.amount)})?`)) {
+      state.expenses = state.expenses.filter(e => e.id !== id);
+      saveState();
+      renderAll();
+      showToast('Expense deleted', 'info');
+    }
+  }
+
+  // Settlement Form & Actions
+  function openRecordSettlementModal() {
+    const metrics = computeMetrics();
+    const activePerson = getActivePerson();
+
+    document.getElementById('stl-form-date').value = getTodayDateString();
+    document.getElementById('stl-form-amount').value = metrics.netDue > 0 ? metrics.netDue : '';
+    document.getElementById('stl-form-mode').value = 'UPI (GPay / PhonePe / Paytm)';
+    document.getElementById('stl-form-ref').value = '';
+    document.getElementById('stl-form-notes').value = `Full settlement of pending due (${formatCurrency(metrics.netDue)})`;
+
+    const personSelect = document.getElementById('stl-form-person');
+    personSelect.innerHTML = state.people.map(p => `
+      <option value="${p.id}" ${p.id === activePerson.id ? 'selected' : ''}>${escapeHtml(p.name)}</option>
+    `).join('');
+
+    openModal('modal-settlement');
+  }
+
+  function saveSettlementForm() {
+    const personId = document.getElementById('stl-form-person').value;
+    const date = document.getElementById('stl-form-date').value;
+    const amount = parseFloat(document.getElementById('stl-form-amount').value);
+    const mode = document.getElementById('stl-form-mode').value;
+    const referenceNo = document.getElementById('stl-form-ref').value.trim();
+    const notes = document.getElementById('stl-form-notes').value.trim();
+
+    if (isNaN(amount) || amount <= 0) {
+      showToast('Please enter a valid received amount', 'warning');
+      return;
+    }
+
+    const newStl = {
+      id: 'stl-' + Date.now(),
+      personId,
+      date,
+      amount,
+      mode,
+      referenceNo,
+      notes,
+      createdAt: new Date().toISOString()
+    };
+
+    state.settlements.unshift(newStl);
+
+    // If settled amount covers unpaid expenses, also mark them settled
+    let remainingCredit = amount;
+    const unpaid = state.expenses
+      .filter(e => e.personId === personId && !e.isSettled)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    for (const exp of unpaid) {
+      if (remainingCredit >= exp.amount) {
+        exp.isSettled = true;
+        exp.settlementId = newStl.id;
+        remainingCredit -= exp.amount;
+      }
+    }
+
+    saveState();
+    closeModal('modal-settlement');
+    renderAll();
+    showToast(`Recorded repayment of ${formatCurrency(amount)}!`, 'success');
+  }
+
+  function deleteSettlement(id) {
+    if (confirm('Are you sure you want to delete this repayment record?')) {
+      // Revert expenses tied to this settlement
+      state.expenses.forEach(e => {
+        if (e.settlementId === id) {
+          e.isSettled = false;
+          e.settlementId = null;
+        }
+      });
+
+      state.settlements = state.settlements.filter(s => s.id !== id);
+      saveState();
+      renderAll();
+      showToast('Settlement record removed', 'info');
+    }
+  }
+
+  // Statement & WhatsApp Generator
+  function openStatementModal() {
+    const activePerson = getActivePerson();
+    const metrics = computeMetrics();
+
+    let items = state.activePersonId === 'all'
+      ? [...state.expenses]
+      : state.expenses.filter(e => e.personId === state.activePersonId);
+
+    // All items sorted by date
+    const expenseList = items.sort((a, b) => new Date(a.date) - new Date(b.date));
+    const symbol = state.settings.currencySymbol || '₹';
+    const userName = state.settings.userName || 'Me';
+    const upiId = state.settings.userUpiId || 'your-upi-id';
+    const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    let lines = [];
+    lines.push(`📋 *EXPENSE STATEMENT*`);
+    lines.push(`From: *${userName}*`);
+    lines.push(`For: *${activePerson.name}*`);
+    lines.push(`Date: ${today}`);
+    lines.push(`────────────────────────`);
+    lines.push(`🧾 *Itemized Expenses Paid on Your Behalf:*`);
+
+    if (expenseList.length === 0) {
+      lines.push(`(No expenses recorded yet.)`);
+    } else {
+      expenseList.forEach((item, idx) => {
+        const cat = getCategoryObj(item.category);
+        lines.push(`${idx + 1}. *${formatDate(item.date)}* - ${item.title}`);
+        lines.push(`   ↳ ${cat.icon} ${symbol}${item.amount.toLocaleString('en-IN')} [Paid via: ${item.paidVia || 'UPI'}]${item.referenceNo ? ` (Ref: ${item.referenceNo})` : ''}`);
+      });
+    }
+
+    lines.push(`────────────────────────`);
+    lines.push(`💰 *Total Expenses Advanced:* ${symbol}${metrics.totalExpenses.toLocaleString('en-IN')}`);
+    lines.push(`✅ *Repayments Received:* ${symbol}${metrics.totalSettled.toLocaleString('en-IN')}`);
+    lines.push(`🚨 *TOTAL BALANCE DUE: ${symbol}${metrics.netDue.toLocaleString('en-IN')}*`);
+    lines.push(`────────────────────────`);
+    lines.push(`📲 *Please settle up via UPI:*`);
+    lines.push(`👉 *${upiId}*`);
+    lines.push(``);
+    lines.push(`_Kindly verify and confirm once settled. Thank you!_`);
+
+    const fullMessage = lines.join('\n');
+    document.getElementById('whatsapp-preview-box').textContent = fullMessage;
+    document.getElementById('statement-for-name').textContent = activePerson.name;
+
+    openModal('modal-statement');
+  }
+
+  function copyWhatsAppMessage() {
+    const text = document.getElementById('whatsapp-preview-box').textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Statement copied to clipboard! Ready to paste into WhatsApp.', 'success');
+      }).catch(() => fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      showToast('Statement copied to clipboard!', 'success');
+    } catch (err) {
+      showToast('Failed to copy. Please select and copy manually.', 'warning');
+    }
+    document.body.removeChild(textArea);
+  }
+
+  function sendViaWhatsAppWeb() {
+    const text = document.getElementById('whatsapp-preview-box').textContent;
+    const activePerson = getActivePerson();
+    let phoneParam = '';
+    if (activePerson.phone) {
+      const cleanPhone = activePerson.phone.replace(/[^0-9]/g, '');
+      if (cleanPhone) phoneParam = `phone=${cleanPhone}&`;
+    }
+    const url = `https://api.whatsapp.com/send?${phoneParam}text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  }
+
+  // Manage People Modal
+  function openPeopleModal() {
+    renderPeopleList();
+    openModal('modal-people');
+  }
+
+  function renderPeopleList() {
+    const container = document.getElementById('people-list-container');
+    if (!container) return;
+
+    let html = '';
+    state.people.forEach(p => {
+      const pExpenses = state.expenses.filter(e => e.personId === p.id).reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+      const pSettled = state.settlements.filter(s => s.personId === p.id).reduce((sum, stl) => sum + Number(stl.amount || 0), 0);
+      const due = Math.max(0, pExpenses - pSettled);
+
+      html += `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--bg-input); border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background-color: ${p.avatarColor || '#6366f1'}; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff;">
+              ${p.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div style="font-weight: 600;">${escapeHtml(p.name)}</div>
+              <div style="font-size: 0.76rem; color: var(--text-muted);">${p.phone ? escapeHtml(p.phone) : 'No phone'} • Due: <strong>${formatCurrency(due)}</strong></div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button class="action-btn delete-btn" title="Delete Person" onclick="window.dueTrackApp.deletePerson('${p.id}')">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  function addNewPerson() {
+    const nameInput = document.getElementById('new-person-name');
+    const phoneInput = document.getElementById('new-person-phone');
+    const notesInput = document.getElementById('new-person-notes');
+
+    const name = nameInput.value.trim();
+    if (!name) {
+      showToast('Please enter person name', 'warning');
+      return;
+    }
+
+    const colors = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#06b6d4', '#8b5cf6', '#ef4444'];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+    const newPerson = {
+      id: 'person-' + Date.now(),
+      name,
+      phone: phoneInput.value.trim(),
+      notes: notesInput.value.trim(),
+      avatarColor: randomColor,
+      createdAt: new Date().toISOString()
+    };
+
+    state.people.push(newPerson);
+    state.activePersonId = newPerson.id;
+    saveState();
+
+    nameInput.value = '';
+    phoneInput.value = '';
+    notesInput.value = '';
+
+    renderPeopleList();
+    renderAll();
+    showToast(`Added contact "${name}"`, 'success');
+  }
+
+  function deletePerson(personId) {
+    if (state.people.length <= 1) {
+      showToast('You must have at least one person in your list', 'warning');
+      return;
+    }
+
+    const person = state.people.find(p => p.id === personId);
+    if (!person) return;
+
+    if (confirm(`Delete "${person.name}" and all their associated expenses & settlements?`)) {
+      state.people = state.people.filter(p => p.id !== personId);
+      state.expenses = state.expenses.filter(e => e.personId !== personId);
+      state.settlements = state.settlements.filter(s => s.personId !== personId);
+
+      if (state.activePersonId === personId) {
+        state.activePersonId = state.people[0]?.id || 'all';
+      }
+
+      saveState();
+      renderPeopleList();
+      renderAll();
+      showToast(`Removed "${person.name}"`, 'info');
+    }
+  }
+
+  // Settings Modal & Data Backup
+  function openSettingsModal() {
+    document.getElementById('settings-my-name').value = state.settings.userName || '';
+    document.getElementById('settings-my-upi').value = state.settings.userUpiId || '';
+    document.getElementById('settings-currency').value = state.settings.currencySymbol || '₹';
+    openModal('modal-settings');
+  }
+
+  function saveSettings() {
+    state.settings.userName = document.getElementById('settings-my-name').value.trim() || 'My Account';
+    state.settings.userUpiId = document.getElementById('settings-my-upi').value.trim() || 'myupi@bank';
+    state.settings.currencySymbol = document.getElementById('settings-currency').value.trim() || '₹';
+
+    saveState();
+    closeModal('modal-settings');
+    renderAll();
+    showToast('Settings saved successfully', 'success');
+  }
+
+  function exportBackupJson() {
+    const backupData = {
+      version: 1,
+      exportDate: new Date().toISOString(),
+      settings: state.settings,
+      people: state.people,
+      expenses: state.expenses,
+      settlements: state.settlements
+    };
+
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ExpensesManager_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Backup JSON downloaded', 'success');
+  }
+
+  function importBackupJson(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data && data.expenses && data.people) {
+          state.settings = data.settings || state.settings;
+          state.people = data.people;
+          state.expenses = data.expenses;
+          state.settlements = data.settlements || [];
+          state.activePersonId = state.people[0]?.id || 'all';
+
+          saveState();
+          renderAll();
+          showToast('Backup restored successfully!', 'success');
+          closeModal('modal-settings');
+        } else {
+          showToast('Invalid backup file format', 'warning');
+        }
+      } catch (err) {
+        showToast('Error reading backup file', 'warning');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function exportCsv() {
+    const items = state.activePersonId === 'all'
+      ? state.expenses
+      : state.expenses.filter(e => e.personId === state.activePersonId);
+
+    if (items.length === 0) {
+      showToast('No expenses to export', 'warning');
+      return;
+    }
+
+    const headers = ['Date', 'Person', 'Category', 'Expense Title', 'Amount', 'Payment Mode', 'Reference No', 'Notes'];
+    const rows = items.map(exp => {
+      const p = state.people.find(person => person.id === exp.personId);
+      const cat = getCategoryObj(exp.category);
+      return [
+        exp.date,
+        p ? `"${p.name.replace(/"/g, '""')}"` : 'Unknown',
+        `"${cat.name}"`,
+        `"${(exp.title || '').replace(/"/g, '""')}"`,
+        exp.amount,
+        `"${(exp.paidVia || '').replace(/"/g, '""')}"`,
+        `"${(exp.referenceNo || '').replace(/"/g, '""')}"`,
+        `"${(exp.notes || '').replace(/"/g, '""')}"`
+      ];
+    });
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ExpensesManager_${state.activePersonId}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('CSV export downloaded', 'success');
+  }
+
+  function resetSampleData() {
+    if (confirm('Reset everything to initial sample data? All custom expenses will be overwritten.')) {
+      state.settings = { ...DEFAULT_SETTINGS };
+      state.people = [...DEFAULT_PEOPLE];
+      state.expenses = [...DEFAULT_EXPENSES];
+      state.settlements = [...DEFAULT_SETTLEMENTS];
+      state.activePersonId = 'person-xyz';
+      saveState();
+      renderAll();
+      showToast('Reset to default sample data', 'info');
+      closeModal('modal-settings');
+    }
+  }
+
+  // Theme Management
+  function toggleTheme() {
+    const newTheme = state.settings.theme === 'light' ? 'dark' : 'light';
+    state.settings.theme = newTheme;
+    applyTheme(newTheme);
+    saveState();
+    renderHeader();
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+
+  // Helper Functions
+  function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('open');
+    }
+  }
+
+  function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.remove('open');
+    }
+  }
+
+  function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 3200);
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function getTodayDateString() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function setupTodayDates() {
+    const today = getTodayDateString();
+    const expDate = document.getElementById('exp-form-date');
+    if (expDate) expDate.value = today;
+    const stlDate = document.getElementById('stl-form-date');
+    if (stlDate) stlDate.value = today;
+  }
+
+  // Event Listeners Setup
+  function attachEventListeners() {
+    // Person switch click
+    document.getElementById('person-tabs-container').addEventListener('click', (e) => {
+      const btn = e.target.closest('.person-tab-btn');
+      if (!btn) return;
+      const personId = btn.getAttribute('data-person-id');
+      if (personId) {
+        state.activePersonId = personId;
+        renderAll();
+      }
+    });
+
+    // Tab switch (Expenses vs Settlements)
+    document.getElementById('tab-btn-expenses').addEventListener('click', () => {
+      state.activeTab = 'expenses';
+      renderLedger();
+    });
+    document.getElementById('tab-btn-settlements').addEventListener('click', () => {
+      state.activeTab = 'settlements';
+      renderLedger();
+    });
+
+    // Search input
+    const searchInput = document.getElementById('filter-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        state.filters.search = e.target.value;
+        renderExpensesTable();
+      });
+    }
+
+    // Category filter
+    const catSelect = document.getElementById('filter-category');
+    if (catSelect) {
+      catSelect.addEventListener('change', (e) => {
+        state.filters.category = e.target.value;
+        renderExpensesTable();
+      });
+    }
+
+
+
+    // Theme toggle
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+
+    // Modal Close buttons (backdrop and close button)
+    document.querySelectorAll('.modal-backdrop').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('open');
+        }
+      });
+    });
+
+    document.querySelectorAll('.modal-close-btn, .btn-modal-cancel').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const modal = btn.closest('.modal-backdrop');
+        if (modal) modal.classList.remove('open');
+      });
+    });
+  }
+
+  // Notion & CSV Import System
+  let pendingNotionExpenses = [];
+
+  function openNotionImportModal() {
+    pendingNotionExpenses = [];
+    const personSelect = document.getElementById('notion-import-person');
+    if (personSelect) {
+      personSelect.innerHTML = state.people.map(p => `
+        <option value="${p.id}" ${p.id === state.activePersonId ? 'selected' : ''}>${escapeHtml(p.name)}</option>
+      `).join('');
+    }
+
+    const fileInput = document.getElementById('notion-csv-file-input');
+    if (fileInput) fileInput.value = '';
+    const fileStatus = document.getElementById('notion-file-status');
+    if (fileStatus) fileStatus.textContent = '';
+    const pasteArea = document.getElementById('notion-paste-textarea');
+    if (pasteArea) pasteArea.value = '';
+    const previewBox = document.getElementById('notion-preview-box');
+    if (previewBox) previewBox.style.display = 'none';
+
+    switchNotionTab('upload');
+    openModal('modal-notion-import');
+  }
+
+  function switchNotionTab(tab) {
+    const uploadBtn = document.getElementById('notion-tab-upload-btn');
+    const pasteBtn = document.getElementById('notion-tab-paste-btn');
+    const uploadPanel = document.getElementById('notion-upload-panel');
+    const pastePanel = document.getElementById('notion-paste-panel');
+
+    if (tab === 'upload') {
+      if (uploadBtn) uploadBtn.classList.add('active');
+      if (pasteBtn) pasteBtn.classList.remove('active');
+      if (uploadPanel) uploadPanel.style.display = 'block';
+      if (pastePanel) pastePanel.style.display = 'none';
+    } else {
+      if (pasteBtn) pasteBtn.classList.add('active');
+      if (uploadBtn) uploadBtn.classList.remove('active');
+      if (uploadPanel) uploadPanel.style.display = 'none';
+      if (pastePanel) pastePanel.style.display = 'block';
+    }
+  }
+
+  function handleNotionFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const fileStatus = document.getElementById('notion-file-status');
+    if (fileStatus) fileStatus.textContent = `Loaded: ${file.name} (${Math.round(file.size / 1024)} KB)`;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      parseNotionData(e.target.result);
+    };
+    reader.readAsText(file);
+  }
+
+  function handleNotionPasteInput() {
+    const pasteArea = document.getElementById('notion-paste-textarea');
+    if (!pasteArea) return;
+    parseNotionData(pasteArea.value);
+  }
+
+  function parseNotionData(text) {
+    if (!text || !text.trim()) {
+      pendingNotionExpenses = [];
+      const previewBox = document.getElementById('notion-preview-box');
+      if (previewBox) previewBox.style.display = 'none';
+      return;
+    }
+
+    const lines = text.trim().split(/\r?\n/).filter(line => line.trim().length > 0);
+    if (lines.length < 2) {
+      return;
+    }
+
+    // Determine delimiter: tab or comma
+    const firstLine = lines[0];
+    const isTab = firstLine.includes('\t');
+    const delimiter = isTab ? '\t' : ',';
+
+    function splitLine(line) {
+      if (isTab) {
+        return line.split('\t').map(c => c.trim().replace(/^["']|["']$/g, ''));
+      }
+      // Simple CSV split with quotes handling
+      const result = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(cur.trim().replace(/^["']|["']$/g, ''));
+          cur = '';
+        } else {
+          cur += char;
+        }
+      }
+      result.push(cur.trim().replace(/^["']|["']$/g, ''));
+      return result;
+    }
+
+    const header = splitLine(firstLine).map(h => h.toLowerCase().trim());
+    
+    // Column index matching
+    let dateIdx = header.findIndex(h => h.includes('date') || h.includes('when') || h.includes('time') || h.includes('created'));
+    let titleIdx = header.findIndex(h => h.includes('name') || h.includes('title') || h.includes('expense') || h.includes('item') || h.includes('description') || h.includes('particular'));
+    let amountIdx = header.findIndex(h => h.includes('amount') || h.includes('cost') || h.includes('price') || h.includes('total') || h.includes('rs') || h.includes('inr') || h.includes('fee'));
+    let catIdx = header.findIndex(h => h.includes('category') || h.includes('type') || h.includes('tag'));
+    let statusIdx = header.findIndex(h => h.includes('status') || h.includes('settled') || h.includes('paid'));
+    let refIdx = header.findIndex(h => h.includes('ref') || h.includes('pnr') || h.includes('id') || h.includes('bill'));
+    let notesIdx = header.findIndex(h => h.includes('note') || h.includes('comment') || h.includes('remark'));
+
+    // Fallbacks if no header detected
+    if (titleIdx === -1 && header.length >= 1) titleIdx = 0;
+    if (amountIdx === -1 && header.length >= 2) amountIdx = 1;
+    if (dateIdx === -1) dateIdx = -1;
+
+    const parsed = [];
+    const today = getTodayDateString();
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = splitLine(lines[i]);
+      if (cols.length === 0 || cols.every(c => !c)) continue;
+
+      let rawTitle = titleIdx !== -1 && cols[titleIdx] ? cols[titleIdx] : `Expense #${i}`;
+      let rawAmountStr = amountIdx !== -1 && cols[amountIdx] ? cols[amountIdx] : '0';
+      // Clean amount: remove currency symbols, commas
+      let cleanAmount = parseFloat(rawAmountStr.replace(/[^0-9.-]+/g, ''));
+      if (isNaN(cleanAmount) || cleanAmount <= 0) continue;
+
+      // Extract date
+      let rawDate = dateIdx !== -1 && cols[dateIdx] ? cols[dateIdx].trim() : today;
+      let formattedDate = today;
+      if (rawDate) {
+        // Try parsing YYYY-MM-DD, DD/MM/YYYY, or Date.parse
+        if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+          formattedDate = rawDate;
+        } else if (/^\d{1,2}[\/-]\d{1,2}[\/-]\d{4}$/.test(rawDate)) {
+          const parts = rawDate.split(/[\/-]/);
+          const day = parts[0].padStart(2, '0');
+          const month = parts[1].padStart(2, '0');
+          const year = parts[2];
+          formattedDate = `${year}-${month}-${day}`;
+        } else {
+          const parsedD = new Date(rawDate);
+          if (!isNaN(parsedD.getTime())) {
+            formattedDate = parsedD.toISOString().split('T')[0];
+          }
+        }
+      }
+
+      // Infer Category
+      let cat = 'other';
+      const catText = ((catIdx !== -1 ? cols[catIdx] : '') + ' ' + rawTitle).toLowerCase();
+      if (catText.includes('train') || catText.includes('irctc') || catText.includes('tatkal') || catText.includes('rail') || catText.includes('ticket')) {
+        cat = 'train';
+      } else if (catText.includes('recharge') || catText.includes('mobile') || catText.includes('jio') || catText.includes('airtel') || catText.includes('phone') || catText.includes('dth')) {
+        cat = 'recharge';
+      } else if (catText.includes('petty') || catText.includes('chai') || catText.includes('tea') || catText.includes('snack') || catText.includes('errand')) {
+        cat = 'petty';
+      } else if (catText.includes('cab') || catText.includes('auto') || catText.includes('uber') || catText.includes('ola') || catText.includes('taxi')) {
+        cat = 'cab';
+      } else if (catText.includes('food') || catText.includes('dinner') || catText.includes('lunch') || catText.includes('restaurant') || catText.includes('cafe')) {
+        cat = 'food';
+      } else if (catText.includes('grocer') || catText.includes('blinkit') || catText.includes('instamart') || catText.includes('supermarket')) {
+        cat = 'groceries';
+      } else if (catText.includes('bill') || catText.includes('wifi') || catText.includes('electric') || catText.includes('utilit')) {
+        cat = 'utilities';
+      }
+
+      // Status
+      let isSettled = false;
+      if (statusIdx !== -1 && cols[statusIdx]) {
+        const sVal = cols[statusIdx].toLowerCase();
+        if (sVal.includes('settle') || sVal.includes('paid') || sVal.includes('done') || sVal.includes('cleared')) {
+          isSettled = true;
+        }
+      }
+
+      parsed.push({
+        id: 'exp-notion-' + Date.now() + '-' + i,
+        date: formattedDate,
+        title: rawTitle,
+        amount: cleanAmount,
+        category: cat,
+        paidVia: 'UPI / Direct',
+        referenceNo: refIdx !== -1 && cols[refIdx] ? cols[refIdx] : '',
+        notes: notesIdx !== -1 && cols[notesIdx] ? cols[notesIdx] : 'Imported from Notion',
+        isSettled: isSettled,
+        settlementId: null,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    pendingNotionExpenses = parsed;
+
+    const previewBox = document.getElementById('notion-preview-box');
+    const previewCount = document.getElementById('notion-preview-count');
+    const previewTotal = document.getElementById('notion-preview-total');
+
+    if (previewBox && previewCount && previewTotal) {
+      if (parsed.length > 0) {
+        previewBox.style.display = 'block';
+        previewCount.textContent = `✅ ${parsed.length} expense(s) ready to import`;
+        const totalSum = parsed.reduce((sum, item) => sum + item.amount, 0);
+        previewTotal.textContent = `Total Sum: ${formatCurrency(totalSum)}`;
+      } else {
+        previewBox.style.display = 'none';
+      }
+    }
+  }
+
+  function confirmNotionImport() {
+    if (pendingNotionExpenses.length === 0) {
+      showToast('No valid expenses to import', 'warning');
+      return;
+    }
+
+    const targetPersonId = document.getElementById('notion-import-person')?.value || state.activePersonId;
+
+    pendingNotionExpenses.forEach(exp => {
+      exp.personId = targetPersonId;
+      state.expenses.unshift(exp);
+    });
+
+    saveState();
+    closeModal('modal-notion-import');
+    renderAll();
+    showToast(`Successfully imported ${pendingNotionExpenses.length} expenses from Notion!`, 'success');
+    pendingNotionExpenses = [];
+  }
+
+  // Expose global API for inline HTML handlers
+  window.dueTrackApp = {
+    openAddExpenseModal,
+    openEditExpenseModal,
+    saveExpenseForm,
+    quickToggleSettle,
+    deleteExpense,
+    openRecordSettlementModal,
+    saveSettlementForm,
+    deleteSettlement,
+    openStatementModal,
+    copyWhatsAppMessage,
+    sendViaWhatsAppWeb,
+    openPeopleModal,
+    addNewPerson,
+    deletePerson,
+    openSettingsModal,
+    saveSettings,
+    exportBackupJson,
+    importBackupJson,
+    exportCsv,
+    resetSampleData,
+    openNotionImportModal,
+    switchNotionTab,
+    handleNotionFileUpload,
+    handleNotionPasteInput,
+    confirmNotionImport,
+    printStatement: () => window.print()
+  };
+
+  window.expensesManager = window.dueTrackApp;
+
+  // Run init on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
+
+</script>
 </body>
 </html>
