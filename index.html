@@ -1678,13 +1678,22 @@ body {
           <div class="form-group">
             <input type="text" id="cloud-mobile-link" class="form-input" readonly style="font-size: 0.78rem; font-family: var(--font-mono); background: rgba(0,0,0,0.3);" onclick="this.select()">
           </div>
-          <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
-            <button type="button" class="btn btn-secondary btn-sm" onclick="window.dueTrackApp.copyMobileSyncLink()">
-              📋 Copy Mobile Link
-            </button>
-            <button type="button" class="btn btn-whatsapp btn-sm" onclick="window.dueTrackApp.sendMobileLinkWhatsApp()">
-              💬 Send Link to WhatsApp
-            </button>
+          <div style="display: flex; gap: 16px; align-items: center; margin-top: 12px; background: rgba(0,0,0,0.25); padding: 12px; border-radius: var(--radius-md);">
+            <div style="text-align: center; flex-shrink: 0;">
+              <img id="cloud-mobile-qr" src="" alt="Mobile Sync QR" style="width: 120px; height: 120px; border-radius: 8px; background: #fff; padding: 4px; display: none;">
+            </div>
+            <div style="flex: 1;">
+              <div style="font-size: 0.82rem; font-weight: 600; color: #fff; margin-bottom: 4px;">📷 Scan QR with Phone Camera</div>
+              <p style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4;">Point your phone camera at this QR code to connect and sync instantly with zero typing!</p>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="window.dueTrackApp.copyMobileSyncLink()">
+                  📋 Copy Link
+                </button>
+                <button type="button" class="btn btn-whatsapp btn-sm" onclick="window.dueTrackApp.sendMobileLinkWhatsApp()">
+                  💬 Send WhatsApp
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -3339,8 +3348,12 @@ const DEFAULT_SETTLEMENTS = [
               lastSyncedAt: 0
             };
             saveState(true);
-            history.replaceState(null, '', window.location.pathname);
-            showToast('Connected to Cloud Sync via link!', 'success');
+            updateCloudSyncBadge();
+            showToast('Connected to Cloud Sync via link! Fetching expenses...', 'success');
+            // Immediate pull from cloud
+            setTimeout(() => {
+              syncFromCloud();
+            }, 100);
           }
         }
       }
@@ -3463,13 +3476,14 @@ const DEFAULT_SETTLEMENTS = [
         cloudData = await res.json();
       }
 
-      if (cloudData && cloudData.updatedAt) {
+      if (cloudData && (cloudData.expenses || cloudData.people)) {
         const lastLocalSync = config.lastSyncedAt || 0;
-        if (cloudData.updatedAt > lastLocalSync) {
-          state.people = cloudData.people || state.people;
-          state.expenses = cloudData.expenses || state.expenses;
-          state.settlements = cloudData.settlements || state.settlements;
-          config.lastSyncedAt = cloudData.updatedAt;
+        const cloudTime = cloudData.updatedAt || Date.now();
+        if (cloudTime > lastLocalSync || !config.lastSyncedAt || lastLocalSync === 0) {
+          state.people = Array.isArray(cloudData.people) ? cloudData.people : state.people;
+          state.expenses = Array.isArray(cloudData.expenses) ? cloudData.expenses : state.expenses;
+          state.settlements = Array.isArray(cloudData.settlements) ? cloudData.settlements : state.settlements;
+          config.lastSyncedAt = cloudTime;
 
           if (cloudData.settings) {
             state.settings.userName = cloudData.settings.userName || state.settings.userName;
@@ -3528,6 +3542,7 @@ const DEFAULT_SETTLEMENTS = [
     const statusBox = document.getElementById('cloud-status-box');
     const mobileBox = document.getElementById('cloud-mobile-box');
     const mobileLinkInput = document.getElementById('cloud-mobile-link');
+    const qrImg = document.getElementById('cloud-mobile-qr');
 
     if (config.enabled) {
       if (statusBox) {
@@ -3544,6 +3559,10 @@ const DEFAULT_SETTLEMENTS = [
         const encoded = encodeURIComponent(btoa(JSON.stringify(syncConfig)));
         const syncUrl = `${window.location.origin}${window.location.pathname}#sync=${encoded}`;
         if (mobileLinkInput) mobileLinkInput.value = syncUrl;
+        if (qrImg) {
+          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(syncUrl)}`;
+          qrImg.style.display = 'block';
+        }
       }
     } else {
       if (statusBox) statusBox.style.display = 'none';
