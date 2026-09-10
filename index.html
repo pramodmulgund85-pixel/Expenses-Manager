@@ -1084,6 +1084,63 @@ body {
   }
 }
 
+/* Cloud Sync Badge & Animations */
+.cloud-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.cloud-sync-badge:hover {
+  border-color: var(--accent-primary);
+  background: var(--bg-card-hover);
+  color: var(--text-main);
+}
+
+.cloud-sync-badge.synced {
+  border-color: var(--settled-border);
+  color: var(--settled-color);
+  background: var(--settled-bg);
+}
+
+.cloud-sync-badge.syncing {
+  border-color: var(--border-focus);
+  color: var(--accent-primary);
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  display: inline-block;
+  transition: var(--transition);
+}
+
+.cloud-sync-badge.synced .sync-dot {
+  background: var(--settled-color);
+  box-shadow: 0 0 8px var(--settled-color);
+}
+
+.cloud-sync-badge.syncing .sync-dot {
+  background: var(--accent-primary);
+  animation: pulseSyncDot 1s infinite alternate;
+}
+
+@keyframes pulseSyncDot {
+  from { opacity: 0.4; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1.15); }
+}
+
 </style>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><path d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'/></svg>">
 </head>
@@ -1111,6 +1168,12 @@ body {
       </div>
 
       <div class="header-actions">
+        <!-- Cloud Sync Badge -->
+        <button class="cloud-sync-badge" id="cloud-sync-badge" onclick="window.dueTrackApp.openCloudSyncModal()" title="Cloud Sync status & multi-device connection">
+          <span class="sync-dot"></span>
+          <span id="sync-status-text">Cloud Sync: Off</span>
+        </button>
+
         <button class="btn btn-secondary btn-sm" onclick="window.dueTrackApp.openNotionImportModal()" title="Import expenses from Notion or CSV">
           <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
           Import Notion
@@ -1182,7 +1245,6 @@ body {
           <span>Settled back to you</span>
         </div>
       </div>
-
     </section>
 
     <!-- Action Bar -->
@@ -1589,6 +1651,98 @@ body {
     </div>
   </div>
 
+  <!-- Modal 7: Multi-Device Cloud Sync -->
+  <div class="modal-backdrop" id="modal-cloud-sync">
+    <div class="modal-card" style="max-width: 640px;">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">☁️ Multi-Device Cloud Sync</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Sync expenses across PC and Mobile Phone in real-time</div>
+        </div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Status Box -->
+        <div id="cloud-status-box" style="display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 14px;">
+        </div>
+
+        <!-- 1-Click Mobile Connect Section -->
+        <div id="cloud-mobile-box" style="display: none; background: var(--bg-input); border: 1px solid var(--accent-primary); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
+          <div style="font-weight: 700; font-size: 0.92rem; color: #fff; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            📱 1-Click Mobile Connection
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">
+            Open this link on your phone browser. Your phone will automatically connect to your cloud database with zero typing!
+          </p>
+          <div class="form-group">
+            <input type="text" id="cloud-mobile-link" class="form-input" readonly style="font-size: 0.78rem; font-family: var(--font-mono); background: rgba(0,0,0,0.3);" onclick="this.select()">
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.dueTrackApp.copyMobileSyncLink()">
+              📋 Copy Mobile Link
+            </button>
+            <button type="button" class="btn btn-whatsapp btn-sm" onclick="window.dueTrackApp.sendMobileLinkWhatsApp()">
+              💬 Send Link to WhatsApp
+            </button>
+          </div>
+        </div>
+
+        <!-- Provider Tabs -->
+        <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 14px;">
+          <button type="button" class="btn btn-secondary btn-sm active" id="cloud-tab-fb-btn" onclick="window.dueTrackApp.switchCloudProviderTab('firebase')">
+            🔥 Google Firebase (Recommended)
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="cloud-tab-pantry-btn" onclick="window.dueTrackApp.switchCloudProviderTab('pantry')">
+            📦 Pantry Cloud (Quickest)
+          </button>
+        </div>
+
+        <!-- Firebase Panel -->
+        <div id="cloud-fb-panel">
+          <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px; background: rgba(15, 23, 42, 0.3); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <strong>1-Minute Free Setup:</strong><br>
+            1. Open <a href="https://console.firebase.google.com" target="_blank" style="color: var(--accent-primary); font-weight: 600;">console.firebase.google.com</a> &rarr; Click <strong>Add project</strong> (e.g. <code>my-expenses</code>).<br>
+            2. In left menu, click <strong>Build &rarr; Realtime Database</strong> &rarr; Click <strong>Create Database</strong>.<br>
+            3. Choose <strong>Start in Test Mode</strong> (allows read/write) &rarr; Click <strong>Enable</strong>.<br>
+            4. Copy your Database URL (e.g. <code>https://my-expenses-default-rtdb.firebaseio.com</code>) and paste below:
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="cloud-firebase-url">Firebase Database URL *</label>
+            <input type="url" id="cloud-firebase-url" class="form-input" placeholder="https://your-project-default-rtdb.firebaseio.com">
+          </div>
+        </div>
+
+        <!-- Pantry Panel -->
+        <div id="cloud-pantry-panel" style="display: none;">
+          <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px; background: rgba(15, 23, 42, 0.3); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <strong>10-Second Free Setup:</strong><br>
+            1. Open <a href="https://getpantry.cloud" target="_blank" style="color: var(--accent-primary); font-weight: 600;">getpantry.cloud</a> &rarr; Enter your email &rarr; Copy your <strong>Pantry ID</strong>.<br>
+            2. Paste your Pantry ID below:
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="cloud-pantry-id">Pantry ID (UUID) *</label>
+            <input type="text" id="cloud-pantry-id" class="form-input" placeholder="e.g. 1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d">
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-danger-outline btn-sm" onclick="window.dueTrackApp.disconnectCloudSync()">
+          Disconnect
+        </button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary btn-modal-cancel">Close</button>
+          <button type="button" class="btn btn-primary" onclick="window.dueTrackApp.connectCloudSync()">
+            Save &amp; Connect Cloud
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -1603,7 +1757,14 @@ const DEFAULT_SETTINGS = {
   userName: "My Account",
   userUpiId: "pramod@upi",
   currencySymbol: "₹",
-  theme: "dark"
+  theme: "dark",
+  cloudSync: {
+    enabled: false,
+    provider: 'firebase', // 'firebase' | 'pantry'
+    firebaseUrl: '',
+    pantryId: '',
+    lastSyncedAt: null
+  }
 };
 
 const DEFAULT_PEOPLE = [
@@ -1794,6 +1955,7 @@ const DEFAULT_SETTLEMENTS = [
     renderAll();
     attachEventListeners();
     setupTodayDates();
+    initCloudSync();
   }
 
   // State Persistence
@@ -1801,6 +1963,9 @@ const DEFAULT_SETTLEMENTS = [
     try {
       const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
       state.settings = savedSettings ? JSON.parse(savedSettings) : { ...DEFAULT_SETTINGS };
+      if (!state.settings.cloudSync) {
+        state.settings.cloudSync = { ...DEFAULT_SETTINGS.cloudSync };
+      }
 
       const savedPeople = localStorage.getItem(STORAGE_KEYS.PEOPLE);
       state.people = savedPeople ? JSON.parse(savedPeople) : [...DEFAULT_PEOPLE];
@@ -1825,7 +1990,7 @@ const DEFAULT_SETTLEMENTS = [
     }
   }
 
-  function saveState() {
+  function saveState(skipCloud = false) {
     try {
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(state.settings));
       localStorage.setItem(STORAGE_KEYS.PEOPLE, JSON.stringify(state.people));
@@ -1834,6 +1999,10 @@ const DEFAULT_SETTLEMENTS = [
     } catch (e) {
       console.error('Failed to save state to localStorage:', e);
       showToast('Could not save changes to browser storage', 'warning');
+    }
+
+    if (!skipCloud) {
+      triggerCloudPush();
     }
   }
 
@@ -3143,6 +3312,346 @@ const DEFAULT_SETTLEMENTS = [
     openStatementModal,
     copyWhatsAppMessage,
     sendViaWhatsAppWeb,
+  // =========================================================================
+  // Cloud Sync System (Firebase Realtime Database & Pantry Cloud)
+  // =========================================================================
+  let cloudSyncTimer = null;
+  let isCloudSyncing = false;
+  let cloudDebounceTimer = null;
+
+  function initCloudSync() {
+    checkUrlSyncHash();
+    updateCloudSyncBadge();
+
+    if (state.settings.cloudSync && state.settings.cloudSync.enabled) {
+      syncFromCloud();
+      startCloudSyncPolling();
+    }
+
+    window.addEventListener('focus', () => {
+      if (state.settings.cloudSync && state.settings.cloudSync.enabled) {
+        syncFromCloud();
+      }
+    });
+  }
+
+  function checkUrlSyncHash() {
+    try {
+      const hash = window.location.hash;
+      if (hash && hash.includes('sync=')) {
+        const encoded = hash.split('sync=')[1];
+        if (encoded) {
+          const configJson = atob(decodeURIComponent(encoded));
+          const config = JSON.parse(configJson);
+          if (config && (config.firebaseUrl || config.pantryId)) {
+            state.settings.cloudSync = {
+              enabled: true,
+              provider: config.provider || (config.firebaseUrl ? 'firebase' : 'pantry'),
+              firebaseUrl: config.firebaseUrl || '',
+              pantryId: config.pantryId || '',
+              lastSyncedAt: 0
+            };
+            saveState(true);
+            history.replaceState(null, '', window.location.pathname);
+            showToast('Connected to Cloud Sync via link!', 'success');
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to parse sync link:', err);
+    }
+  }
+
+  function updateCloudSyncBadge(status = null) {
+    const badge = document.getElementById('cloud-sync-badge');
+    const text = document.getElementById('sync-status-text');
+    if (!badge || !text) return;
+
+    badge.classList.remove('synced', 'syncing');
+
+    const config = state.settings.cloudSync;
+    if (!config || !config.enabled) {
+      text.textContent = 'Cloud Sync: Off';
+      badge.title = 'Click to connect Cloud Sync across devices';
+      return;
+    }
+
+    if (status === 'syncing') {
+      badge.classList.add('syncing');
+      text.textContent = 'Syncing...';
+    } else {
+      badge.classList.add('synced');
+      text.textContent = config.provider === 'firebase' ? 'Firebase Synced' : 'Pantry Synced';
+      badge.title = 'Connected to Cloud. Click for sync settings & mobile link.';
+    }
+  }
+
+  function startCloudSyncPolling() {
+    if (cloudSyncTimer) clearInterval(cloudSyncTimer);
+    cloudSyncTimer = setInterval(() => {
+      if (state.settings.cloudSync && state.settings.cloudSync.enabled) {
+        syncFromCloud();
+      }
+    }, 20000);
+  }
+
+  function triggerCloudPush() {
+    if (!state.settings.cloudSync || !state.settings.cloudSync.enabled) return;
+
+    if (cloudDebounceTimer) clearTimeout(cloudDebounceTimer);
+    cloudDebounceTimer = setTimeout(() => {
+      syncToCloud();
+    }, 800);
+  }
+
+  async function syncToCloud() {
+    const config = state.settings.cloudSync;
+    if (!config || !config.enabled) return;
+
+    updateCloudSyncBadge('syncing');
+    const now = Date.now();
+
+    const payload = {
+      version: 1,
+      updatedAt: now,
+      settings: {
+        userName: state.settings.userName,
+        userUpiId: state.settings.userUpiId,
+        currencySymbol: state.settings.currencySymbol,
+        theme: state.settings.theme
+      },
+      people: state.people,
+      expenses: state.expenses,
+      settlements: state.settlements
+    };
+
+    try {
+      if (config.provider === 'firebase') {
+        const baseUrl = config.firebaseUrl.trim().replace(/\/$/, '');
+        const url = `${baseUrl}/expenses_manager.json`;
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(`Firebase HTTP ${res.status}`);
+      } else {
+        const pantryId = config.pantryId.trim();
+        const url = `https://getpantry.cloud/apiv1/pantry/${pantryId}/basket/expenses_manager`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(`Pantry HTTP ${res.status}`);
+      }
+
+      config.lastSyncedAt = now;
+      saveState(true);
+      updateCloudSyncBadge();
+    } catch (err) {
+      console.error('Cloud push failed:', err);
+      updateCloudSyncBadge();
+    }
+  }
+
+  async function syncFromCloud() {
+    const config = state.settings.cloudSync;
+    if (!config || !config.enabled || isCloudSyncing) return;
+
+    isCloudSyncing = true;
+    try {
+      let cloudData = null;
+      if (config.provider === 'firebase') {
+        const baseUrl = config.firebaseUrl.trim().replace(/\/$/, '');
+        const url = `${baseUrl}/expenses_manager.json`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Firebase HTTP ${res.status}`);
+        cloudData = await res.json();
+      } else {
+        const pantryId = config.pantryId.trim();
+        const url = `https://getpantry.cloud/apiv1/pantry/${pantryId}/basket/expenses_manager`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Pantry HTTP ${res.status}`);
+        cloudData = await res.json();
+      }
+
+      if (cloudData && cloudData.updatedAt) {
+        const lastLocalSync = config.lastSyncedAt || 0;
+        if (cloudData.updatedAt > lastLocalSync) {
+          state.people = cloudData.people || state.people;
+          state.expenses = cloudData.expenses || state.expenses;
+          state.settlements = cloudData.settlements || state.settlements;
+          config.lastSyncedAt = cloudData.updatedAt;
+
+          if (cloudData.settings) {
+            state.settings.userName = cloudData.settings.userName || state.settings.userName;
+            state.settings.userUpiId = cloudData.settings.userUpiId || state.settings.userUpiId;
+            state.settings.currencySymbol = cloudData.settings.currencySymbol || state.settings.currencySymbol;
+          }
+
+          saveState(true);
+          renderAll();
+          showToast('Synced latest expenses from Cloud!', 'info');
+        }
+      }
+    } catch (err) {
+      console.error('Cloud pull failed:', err);
+    } finally {
+      isCloudSyncing = false;
+      updateCloudSyncBadge();
+    }
+  }
+
+  function openCloudSyncModal() {
+    const config = state.settings.cloudSync || {};
+    const fbInput = document.getElementById('cloud-firebase-url');
+    const pantryInput = document.getElementById('cloud-pantry-id');
+    const activeProvider = config.provider || 'firebase';
+
+    if (fbInput) fbInput.value = config.firebaseUrl || '';
+    if (pantryInput) pantryInput.value = config.pantryId || '';
+
+    switchCloudProviderTab(activeProvider);
+    updateCloudModalStatus();
+    openModal('modal-cloud-sync');
+  }
+
+  function switchCloudProviderTab(provider) {
+    const fbBtn = document.getElementById('cloud-tab-fb-btn');
+    const pantryBtn = document.getElementById('cloud-tab-pantry-btn');
+    const fbPanel = document.getElementById('cloud-fb-panel');
+    const pantryPanel = document.getElementById('cloud-pantry-panel');
+
+    if (provider === 'firebase') {
+      if (fbBtn) fbBtn.classList.add('active');
+      if (pantryBtn) pantryBtn.classList.remove('active');
+      if (fbPanel) fbPanel.style.display = 'block';
+      if (pantryPanel) pantryPanel.style.display = 'none';
+    } else {
+      if (pantryBtn) pantryBtn.classList.add('active');
+      if (fbBtn) fbBtn.classList.remove('active');
+      if (fbPanel) fbPanel.style.display = 'none';
+      if (pantryPanel) pantryPanel.style.display = 'block';
+    }
+  }
+
+  function updateCloudModalStatus() {
+    const config = state.settings.cloudSync || {};
+    const statusBox = document.getElementById('cloud-status-box');
+    const mobileBox = document.getElementById('cloud-mobile-box');
+    const mobileLinkInput = document.getElementById('cloud-mobile-link');
+
+    if (config.enabled) {
+      if (statusBox) {
+        statusBox.style.display = 'block';
+        statusBox.innerHTML = `🟢 <strong>Connected to ${config.provider === 'firebase' ? 'Google Firebase' : 'Pantry Cloud'}</strong><br><span style="font-size: 0.8rem; color: var(--text-muted);">Real-time sync active across all your devices.</span>`;
+      }
+      if (mobileBox) {
+        mobileBox.style.display = 'block';
+        const syncConfig = {
+          provider: config.provider,
+          firebaseUrl: config.firebaseUrl,
+          pantryId: config.pantryId
+        };
+        const encoded = encodeURIComponent(btoa(JSON.stringify(syncConfig)));
+        const syncUrl = `${window.location.origin}${window.location.pathname}#sync=${encoded}`;
+        if (mobileLinkInput) mobileLinkInput.value = syncUrl;
+      }
+    } else {
+      if (statusBox) statusBox.style.display = 'none';
+      if (mobileBox) mobileBox.style.display = 'none';
+    }
+  }
+
+  async function connectCloudSync() {
+    const fbBtn = document.getElementById('cloud-tab-fb-btn');
+    const isFb = fbBtn && fbBtn.classList.contains('active');
+    const provider = isFb ? 'firebase' : 'pantry';
+
+    const fbUrl = document.getElementById('cloud-firebase-url')?.value.trim();
+    const pantryId = document.getElementById('cloud-pantry-id')?.value.trim();
+
+    if (provider === 'firebase' && !fbUrl) {
+      showToast('Please enter your Firebase Database URL', 'warning');
+      return;
+    }
+    if (provider === 'pantry' && !pantryId) {
+      showToast('Please enter your Pantry ID', 'warning');
+      return;
+    }
+
+    showToast('Testing cloud connection...', 'info');
+
+    state.settings.cloudSync = {
+      enabled: true,
+      provider: provider,
+      firebaseUrl: fbUrl || '',
+      pantryId: pantryId || '',
+      lastSyncedAt: 0
+    };
+
+    try {
+      await syncToCloud();
+      saveState(true);
+      updateCloudModalStatus();
+      updateCloudSyncBadge();
+      showToast('Cloud Sync Connected Successfully!', 'success');
+    } catch (err) {
+      state.settings.cloudSync.enabled = false;
+      saveState(true);
+      updateCloudModalStatus();
+      updateCloudSyncBadge();
+      showToast('Failed to connect to cloud. Check URL or ID.', 'warning');
+    }
+  }
+
+  function disconnectCloudSync() {
+    if (confirm('Disconnect cloud sync? Your expenses will remain stored locally on this device.')) {
+      state.settings.cloudSync.enabled = false;
+      if (cloudSyncTimer) clearInterval(cloudSyncTimer);
+      saveState(true);
+      updateCloudModalStatus();
+      updateCloudSyncBadge();
+      showToast('Cloud sync disconnected', 'info');
+    }
+  }
+
+  function copyMobileSyncLink() {
+    const input = document.getElementById('cloud-mobile-link');
+    if (!input || !input.value) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(input.value).then(() => {
+        showToast('Mobile link copied! Open it on your phone browser to sync.', 'success');
+      }).catch(() => fallbackCopy(input.value));
+    } else {
+      fallbackCopy(input.value);
+    }
+  }
+
+  function sendMobileLinkWhatsApp() {
+    const input = document.getElementById('cloud-mobile-link');
+    if (!input || !input.value) return;
+
+    const message = `Here is your 1-click Expenses Manager Sync Link for your mobile phone:\n\n${input.value}\n\nOpen this link on your phone to automatically sync all your expenses!`;
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  }
+
+  // Expose global API for inline HTML handlers
+  window.dueTrackApp = {
+    openAddExpenseModal,
+    openEditExpenseModal,
+    saveExpenseForm,
+    quickToggleSettle: () => {},
+    deleteExpense,
+    openRecordSettlementModal,
+    saveSettlementForm,
+    deleteSettlement,
+    openStatementModal,
+    copyWhatsAppMessage,
+    sendViaWhatsAppWeb,
     openPeopleModal,
     addNewPerson,
     deletePerson,
@@ -3157,6 +3666,12 @@ const DEFAULT_SETTLEMENTS = [
     handleNotionFileUpload,
     handleNotionPasteInput,
     confirmNotionImport,
+    openCloudSyncModal,
+    switchCloudProviderTab,
+    connectCloudSync,
+    disconnectCloudSync,
+    copyMobileSyncLink,
+    sendMobileLinkWhatsApp,
     printStatement: () => window.print()
   };
 
