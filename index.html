@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expenses Manager - On-Behalf Expense & Settlement Tracker</title>
+  <meta name="description" content="Track expenses paid on behalf of others (train bookings, mobile recharge, petty expenses), calculate net balances, and generate instant WhatsApp statements for reimbursement.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><path d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'/></svg>">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Print-only statement header (shown only when printing / saving PDF) -->
+    <div id="print-statement-header" class="print-only-statement-header"></div>
+
+    <!-- Application Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo" id="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">
+            Expenses <span class="brand-badge">Manager</span>
+          </div>
+          <div class="brand-tagline">On-Behalf Expense & Settlement Ledger</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-sm" onclick="window.dueTrackApp.openNotionImportModal()" title="Import expenses from Notion or CSV">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Import Notion
+        </button>
+
+        <button class="btn btn-secondary btn-sm" onclick="window.dueTrackApp.openPeopleModal()" title="Manage contacts & people">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          Contacts
+        </button>
+
+        <button class="btn btn-secondary btn-sm" onclick="window.dueTrackApp.openSettingsModal()" title="Settings, UPI ID & Backups">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span id="header-user-name">Settings</span>
+        </button>
+
+        <button class="btn-icon" id="theme-toggle-btn" title="Toggle Light / Dark theme">
+          <!-- populated dynamically -->
+        </button>
+      </div>
+    </header>
+
+    <!-- Person Selector Strip -->
+    <div class="person-strip-card">
+      <div class="person-selector-group">
+        <div class="person-selector-label">Whose Ledger:</div>
+        <div class="person-tabs" id="person-tabs-container">
+          <!-- Person tabs rendered by JS -->
+        </div>
+      </div>
+      <div class="person-meta-details" id="active-person-meta">
+        <!-- Person phone & notes rendered by JS -->
+      </div>
+    </div>
+
+    <!-- KPI Summary Grid -->
+    <section class="kpi-grid">
+      <!-- Net Due Card -->
+      <div class="kpi-card highlight-due">
+        <div class="kpi-header">
+          <span class="kpi-title">Net Balance Due To You</span>
+          <div class="kpi-icon due">🚨</div>
+        </div>
+        <div class="kpi-value due-val" id="kpi-net-due">₹0.00</div>
+        <div class="kpi-footer">
+          <span>Owed by <strong id="kpi-person-name">Person XYZ</strong></span>
+        </div>
+      </div>
+
+      <!-- Total Advanced Card -->
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Expenses Advanced</span>
+          <div class="kpi-icon total">💳</div>
+        </div>
+        <div class="kpi-value" id="kpi-total-advanced">₹0.00</div>
+        <div class="kpi-footer">
+          <span>Paid out of your pocket</span>
+        </div>
+      </div>
+
+      <!-- Total Settled Card -->
+      <div class="kpi-card highlight-settled">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Repayments Received</span>
+          <div class="kpi-icon settled">✅</div>
+        </div>
+        <div class="kpi-value settled-val" id="kpi-total-settled">₹0.00</div>
+        <div class="kpi-footer">
+          <span>Settled back to you</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Action Bar -->
+    <div class="quick-action-strip">
+      <div class="main-action-buttons">
+        <button class="btn btn-primary" onclick="window.dueTrackApp.openAddExpenseModal()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Add Expense
+        </button>
+        <button class="btn btn-success" onclick="window.dueTrackApp.openRecordSettlementModal()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Record Repayment
+        </button>
+        <button class="btn btn-whatsapp" onclick="window.dueTrackApp.openStatementModal()">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.174.086.275.073.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+          Statement / WhatsApp
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Ledger Card -->
+    <div class="main-ledger-card">
+      <!-- Tabs -->
+      <div class="ledger-header">
+        <div class="ledger-tabs">
+          <button class="ledger-tab-btn active" id="tab-btn-expenses">
+            <span>Expenses Paid By Me</span>
+            <span class="tab-badge" id="expenses-count-badge">0</span>
+          </button>
+          <button class="ledger-tab-btn" id="tab-btn-settlements">
+            <span>Repayments & Settlements</span>
+            <span class="tab-badge" id="settlements-count-badge">0</span>
+          </button>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary btn-sm" onclick="window.dueTrackApp.exportCsv()" title="Export filtered expenses to CSV / Excel">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Export CSV
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="window.dueTrackApp.printStatement()" title="Print clean official statement or Save as PDF">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Print / PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters Toolbar -->
+      <div class="filter-toolbar">
+        <div class="filter-left-group">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="filter-search" class="search-input" placeholder="Search description, notes, ref #...">
+          </div>
+
+          <select id="filter-category" class="select-filter">
+            <option value="all">All Categories</option>
+            <option value="train">🚆 Train / Travel</option>
+            <option value="recharge">📱 Mobile Recharge</option>
+            <option value="petty">☕ Petty / Errands</option>
+            <option value="cab">🚕 Cab & Auto</option>
+            <option value="food">🍔 Food & Dining</option>
+            <option value="groceries">🛒 Groceries</option>
+            <option value="utilities">💡 Bills & Utilities</option>
+            <option value="other">📦 Other</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Ledger Dynamic Table Container -->
+      <div id="ledger-table-container">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+  </div> <!-- /app-container -->
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Modal 1: Add/Edit Expense -->
+  <div class="modal-backdrop" id="modal-expense">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-expense-title">Add Expense Paid on Behalf</div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-add-expense" onsubmit="event.preventDefault(); window.dueTrackApp.saveExpenseForm();">
+          <input type="hidden" id="exp-form-id">
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="exp-form-person">Paid for Person *</label>
+              <select id="exp-form-person" class="form-select" required></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="exp-form-date">Expense Date *</label>
+              <input type="date" id="exp-form-date" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 12px;">
+            <label class="form-label" for="exp-form-title">Expense Title / Description *</label>
+            <input type="text" id="exp-form-title" class="form-input" placeholder="e.g. IRCTC Train Ticket to Delhi, Jio Recharge, Auto fare" required>
+          </div>
+
+          <div class="form-row" style="margin-top: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="exp-form-amount">Amount (₹) *</label>
+              <input type="number" id="exp-form-amount" class="form-input" step="0.01" min="1" placeholder="e.g. 1480" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="exp-form-category">Category</label>
+              <select id="exp-form-category" class="form-select">
+                <option value="train">🚆 Train / Travel Booking</option>
+                <option value="recharge">📱 Mobile / DTH Recharge</option>
+                <option value="petty">☕ Petty Cash / Chai / Errands</option>
+                <option value="cab">🚕 Cab & Auto Fare</option>
+                <option value="food">🍔 Food & Dining</option>
+                <option value="groceries">🛒 Groceries & Supplies</option>
+                <option value="utilities">💡 Bills & Utilities</option>
+                <option value="other">📦 Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row" style="margin-top: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="exp-form-paidvia">Paid By Me Via</label>
+              <select id="exp-form-paidvia" class="form-select">
+                <option value="UPI (GPay / PhonePe / Paytm)">UPI (GPay / PhonePe / Paytm)</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Debit Card">Debit Card</option>
+                <option value="Net Banking">Net Banking</option>
+                <option value="Cash">Cash</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="exp-form-ref">PNR / Ref # / Bill ID</label>
+              <input type="text" id="exp-form-ref" class="form-input" placeholder="e.g. PNR 8421092831, Bill 440">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 12px;">
+            <label class="form-label" for="exp-form-notes">Notes / Context (Optional)</label>
+            <textarea id="exp-form-notes" class="form-textarea" rows="2" placeholder="e.g. He called me in urgency to book tatkal; promised to settle next week"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-modal-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="window.dueTrackApp.saveExpenseForm()">Save Expense</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Record Repayment / Settlement -->
+  <div class="modal-backdrop" id="modal-settlement">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Record Repayment Received</div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-add-settlement" onsubmit="event.preventDefault(); window.dueTrackApp.saveSettlementForm();">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="stl-form-person">Received From *</label>
+              <select id="stl-form-person" class="form-select" required></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="stl-form-date">Payment Date *</label>
+              <input type="date" id="stl-form-date" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-row" style="margin-top: 12px;">
+            <div class="form-group">
+              <label class="form-label" for="stl-form-amount">Amount Received (₹) *</label>
+              <input type="number" id="stl-form-amount" class="form-input" step="0.01" min="1" placeholder="e.g. 1500" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="stl-form-mode">Payment Mode</label>
+              <select id="stl-form-mode" class="form-select">
+                <option value="UPI (GPay / PhonePe / Paytm)">UPI (GPay / PhonePe / Paytm)</option>
+                <option value="Direct Bank Transfer / NEFT">Direct Bank Transfer / NEFT</option>
+                <option value="Cash">Cash in Hand</option>
+                <option value="Other">Other Mode</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 12px;">
+            <label class="form-label" for="stl-form-ref">Transaction / UPI Reference ID</label>
+            <input type="text" id="stl-form-ref" class="form-input" placeholder="e.g. UPI/3902910283/GPay">
+          </div>
+
+          <div class="form-group" style="margin-top: 12px;">
+            <label class="form-label" for="stl-form-notes">Settlement Remarks</label>
+            <input type="text" id="stl-form-notes" class="form-input" placeholder="e.g. Full settlement for August train and recharge expenses">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-modal-cancel">Cancel</button>
+        <button type="button" class="btn btn-success" onclick="window.dueTrackApp.saveSettlementForm()">Record Payment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Statement & WhatsApp Generator -->
+  <div class="modal-backdrop" id="modal-statement">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Shareable Expense Statement</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Formatted for WhatsApp / SMS for <strong id="statement-for-name">Person XYZ</strong></div>
+        </div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.86rem; color: var(--text-muted);">
+          Here is the itemized summary of all pending expenses and net due amount. You can copy this text or send it straight to their WhatsApp:
+        </p>
+
+        <!-- WhatsApp Preview Box -->
+        <div class="whatsapp-box-container" id="whatsapp-preview-box">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="window.dueTrackApp.printStatement()">
+          🖨️ Print / Save PDF
+        </button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary" onclick="window.dueTrackApp.copyWhatsAppMessage()">
+            📋 Copy Message
+          </button>
+          <button type="button" class="btn btn-whatsapp" onclick="window.dueTrackApp.sendViaWhatsAppWeb()">
+            💬 Send on WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Manage Contacts / People -->
+  <div class="modal-backdrop" id="modal-people">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Manage Contacts & Beneficiaries</div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px;">Active Contacts:</div>
+        <div id="people-list-container">
+          <!-- Populated by JS -->
+        </div>
+
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+          <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 10px;">+ Add New Person</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Full Name *</label>
+              <input type="text" id="new-person-name" class="form-input" placeholder="e.g. Ramesh Verma">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone / WhatsApp</label>
+              <input type="text" id="new-person-phone" class="form-input" placeholder="e.g. +91 9876543210">
+            </div>
+          </div>
+          <div class="form-group" style="margin-top: 8px;">
+            <label class="form-label">Relationship / Notes</label>
+            <input type="text" id="new-person-notes" class="form-input" placeholder="e.g. Cousin, Travel buddy, Office mate">
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 10px;" onclick="window.dueTrackApp.addNewPerson()">+ Add Contact</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-modal-cancel">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Settings & Backup -->
+  <div class="modal-backdrop" id="modal-settings">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Settings & Data Backup</div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="settings-my-name">Your Name (shown on statements)</label>
+          <input type="text" id="settings-my-name" class="form-input" placeholder="e.g. Pramod">
+        </div>
+        <div class="form-group" style="margin-top: 10px;">
+          <label class="form-label" for="settings-my-upi">Your Default UPI ID (included in reimbursement requests)</label>
+          <input type="text" id="settings-my-upi" class="form-input" placeholder="e.g. yourname@okhdfcbank">
+        </div>
+        <div class="form-group" style="margin-top: 10px;">
+          <label class="form-label" for="settings-currency">Currency Symbol</label>
+          <input type="text" id="settings-currency" class="form-input" value="₹" style="max-width: 100px;">
+        </div>
+
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+          <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 6px;">Data Backup & Restore</div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+            Your data is stored locally in your browser. Download a JSON backup to keep your records safe or restore on another device.
+          </p>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.dueTrackApp.exportBackupJson()">
+              📥 Export JSON Backup
+            </button>
+            <label class="btn btn-secondary btn-sm" style="cursor: pointer;">
+              📤 Restore JSON Backup
+              <input type="file" accept=".json" style="display: none;" onchange="window.dueTrackApp.importBackupJson(event)">
+            </label>
+            <button type="button" class="btn btn-danger-outline btn-sm" onclick="window.dueTrackApp.resetSampleData()">
+              🔄 Reset Sample Data
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-modal-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="window.dueTrackApp.saveSettings()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: Import from Notion / CSV -->
+  <div class="modal-backdrop" id="modal-notion-import">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Import Expenses from Notion</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Upload Notion CSV export or paste Notion table rows directly</div>
+        </div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: var(--bg-input); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+          💡 <strong>How to export from Notion:</strong><br>
+          1. In Notion, open your expenses database page.<br>
+          2. Click <strong>•••</strong> (top right corner) &rarr; <strong>Export</strong> &rarr; Select <strong>Markdown &amp; CSV</strong> &rarr; Click <strong>Export</strong>.<br>
+          3. Upload the resulting <code>.csv</code> file below, OR simply select table rows in Notion and copy-paste them into the box!
+        </div>
+
+        <div class="form-group" style="margin-top: 12px;">
+          <label class="form-label" for="notion-import-person">Assign imported expenses to:</label>
+          <select id="notion-import-person" class="form-select"></select>
+        </div>
+
+        <!-- Import Tabs -->
+        <div style="display: flex; gap: 8px; margin-top: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+          <button type="button" class="btn btn-secondary btn-sm active" id="notion-tab-upload-btn" onclick="window.dueTrackApp.switchNotionTab('upload')">
+            📂 Upload Notion CSV
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="notion-tab-paste-btn" onclick="window.dueTrackApp.switchNotionTab('paste')">
+            📋 Direct Paste from Notion
+          </button>
+        </div>
+
+        <!-- Tab 1: File Upload -->
+        <div id="notion-upload-panel" style="margin-top: 14px;">
+          <div style="border: 2px dashed var(--border-color); border-radius: var(--radius-md); padding: 24px; text-align: center; background: rgba(15, 23, 42, 0.2);">
+            <div style="font-size: 2rem; margin-bottom: 8px;">📄</div>
+            <div style="font-weight: 600; margin-bottom: 4px;">Choose Notion CSV file</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">Supports .csv, .tsv, or .txt exported from Notion</div>
+            <label class="btn btn-primary btn-sm" style="cursor: pointer; display: inline-flex;">
+              Browse File
+              <input type="file" id="notion-csv-file-input" accept=".csv,.tsv,.txt" style="display: none;" onchange="window.dueTrackApp.handleNotionFileUpload(event)">
+            </label>
+            <div id="notion-file-status" style="font-size: 0.8rem; color: var(--settled-color); margin-top: 8px; font-weight: 600;"></div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Direct Paste -->
+        <div id="notion-paste-panel" style="margin-top: 14px; display: none;">
+          <div class="form-group">
+            <label class="form-label" for="notion-paste-textarea">Paste Notion Table Rows (Ctrl+V):</label>
+            <textarea id="notion-paste-textarea" class="form-textarea" rows="6" placeholder="Paste rows directly copied from your Notion database table..." oninput="window.dueTrackApp.handleNotionPasteInput()"></textarea>
+          </div>
+        </div>
+
+        <!-- Preview Results -->
+        <div id="notion-preview-box" style="display: none; margin-top: 14px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-md); padding: 12px 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 700; color: var(--settled-color); font-size: 0.9rem;" id="notion-preview-count">0 expenses detected</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);" id="notion-preview-total">Total Amount: ₹0.00</div>
+            </div>
+            <button type="button" class="btn btn-success btn-sm" onclick="window.dueTrackApp.confirmNotionImport()">
+              Import Now
+            </button>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-modal-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Application Logic Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
